@@ -1,0 +1,398 @@
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lyra — Live Lyrics for Windows</title>
+<meta name="description" content="Lyra lights the lyrics of whatever you're playing, word by word, across your Windows desktop. Free, for Windows 10 & 11." />
+<meta name="theme-color" content="#08080b" />
+<meta property="og:title" content="Lyra — Live Lyrics for Windows" />
+<meta property="og:description" content="Lyrics that light up word by word on your desktop, synced to your music with a beat-reactive glow." />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
+<style>
+  :root{
+    --bg:#08080b; --ink:#f5f6f8; --muted:#8c8e9a; --faint:#585a66;
+    --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.16); --panel:#0e0e13;
+    --accent:#ff2e6e; --accent-ink:#fff;      /* single accent; theme dots change it */
+    --font:"Hanken Grotesk","Segoe UI",system-ui,sans-serif;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box;margin:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;font-size:17px}
+  img{max-width:100%}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  ::selection{background:var(--accent);color:var(--accent-ink)}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px}
+  .skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#000;padding:10px 16px;z-index:100;font-weight:600}
+  .skip:focus{left:0}
+
+  .eyebrow{font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--faint);font-weight:600}
+  .btn{font-family:var(--font);font-weight:600;font-size:15px;border:none;border-radius:999px;padding:13px 24px;cursor:pointer;display:inline-flex;align-items:center;gap:9px;transition:transform .18s ease, background .2s, color .2s, border-color .2s}
+  .btn.primary{background:var(--ink);color:#0a0a0d}
+  .btn.primary:hover{transform:translateY(-2px)}
+  .btn.quiet{background:transparent;color:var(--ink);border:1px solid var(--line2)}
+  .btn.quiet:hover{border-color:var(--ink)}
+
+  /* nav */
+  header.nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(16px);background:color-mix(in srgb,var(--bg) 72%,transparent);border-bottom:1px solid var(--line)}
+  .nav .row{display:flex;align-items:center;height:66px;gap:20px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;letter-spacing:-.02em}
+  .brand .mk{width:24px;height:24px;border-radius:7px;background:var(--panel);border:1px solid var(--line2);display:grid;place-items:center;font-weight:800;font-size:14px;color:var(--accent)}
+  .nav .links{display:flex;gap:26px;margin-left:8px}
+  .nav .links a{color:var(--muted);font-size:14.5px;font-weight:500}
+  .nav .links a:hover{color:var(--ink)}
+  .nav .sp{flex:1}
+  .nav .btn{padding:9px 18px;font-size:14px}
+  @media(max-width:680px){.nav .links{display:none}}
+
+  /* hero */
+  .hero{text-align:center;padding:86px 0 54px}
+  .hero .eyebrow{margin-bottom:22px}
+  h1{font-weight:800;font-size:clamp(40px,7vw,82px);line-height:0.98;letter-spacing:-.04em;text-wrap:balance;max-width:15ch;margin:0 auto}
+  .hero .lede{color:var(--muted);font-size:clamp(16px,2vw,20px);max-width:46ch;margin:22px auto 0}
+  .hero .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:34px}
+  .hero .meta{margin-top:18px;color:var(--faint);font-size:13px}
+
+  /* device / interactive sample */
+  .showcase{perspective:1500px;padding:24px 0 74px;display:flex;justify-content:center;position:relative}
+  .floor{position:absolute;left:50%;bottom:1%;transform:translateX(-50%);width:58%;height:96px;z-index:-1;
+    background:radial-gradient(ellipse at center, color-mix(in srgb,var(--accent) 42%,transparent), transparent 70%);filter:blur(30px);opacity:.5;transition:background .3s}
+  .rig{width:min(860px,100%);transform-style:preserve-3d;transform:rotateX(var(--rx,9deg)) rotateY(var(--ry,0deg));transition:transform .3s ease;will-change:transform}
+  .rigFloat{transform-style:preserve-3d;animation:float 7s ease-in-out infinite;display:flex;flex-direction:column;align-items:center}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-11px)}}
+  .monitor{width:100%;display:flex;flex-direction:column;align-items:center;transform-style:preserve-3d}
+  .device{width:100%;aspect-ratio:16/10;border-radius:16px;position:relative;overflow:hidden;
+    background:var(--d-wall,#0b0b12);border:1px solid rgba(255,255,255,.12);
+    box-shadow:0 50px 100px -50px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.14)}
+  .dglow{position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+    box-shadow:inset 0 0 40px 2px color-mix(in srgb,var(--accent) calc(var(--amb,.4) * 70%),transparent),
+               inset 0 0 110px 16px color-mix(in srgb,var(--accent) calc(var(--amb,.4) * 40%),transparent)}
+  .stand{width:16px;height:40px;background:linear-gradient(#20222c,#111219)}
+  .base{width:160px;height:13px;border-radius:50%/70%;background:linear-gradient(#1b1d26,#0d0e14);box-shadow:0 16px 34px -10px rgba(0,0,0,.85)}
+  .keyboard{width:64%;margin-top:24px;transform:rotateX(60deg);transform-origin:center top;transform-style:preserve-3d;
+    background:linear-gradient(#161822,#0e0f16);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:11px 12px;
+    box-shadow:0 40px 60px -24px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.06);display:flex;flex-direction:column;gap:6px}
+  .krow{display:flex;gap:6px;justify-content:center}
+  .key{height:15px;flex:1;max-width:24px;border-radius:4px;background:linear-gradient(#24262f,#181a22);border:1px solid rgba(255,255,255,.05);box-shadow:0 2px 0 rgba(0,0,0,.45)}
+  .key.wide{max-width:140px;flex:5}
+  .key.accent{background:linear-gradient(color-mix(in srgb,var(--accent) 72%,#000),color-mix(in srgb,var(--accent) 38%,#000));border-color:transparent;box-shadow:0 0 14px -2px var(--accent),0 2px 0 rgba(0,0,0,.4)}
+  @media(max-width:640px){.keyboard{width:82%}}
+  .osclock{position:absolute;left:22px;top:16px;color:#fff;text-shadow:0 2px 16px rgba(0,0,0,.5)}
+  .osclock b{display:block;font-weight:700;font-size:30px;line-height:1;letter-spacing:-.01em}
+  .osclock span{font-size:11px;color:#dfe1ea}
+  .dstage{position:absolute;left:0;right:0;top:0;bottom:70px;display:grid;place-items:center;overflow:hidden}
+  .dlines{width:90%;text-align:center}
+  .dln{font-family:"Bagel Fat One",var(--font);font-weight:400;font-size:clamp(24px,4.4vw,44px);line-height:1.14;color:rgba(255,255,255,.32);transition:opacity .3s,transform .3s;margin:.12em 0;letter-spacing:.01em}
+  .dwd{display:inline-block;margin:0 .13em;transition:.14s}
+  .dwd.on{color:var(--accent-ink);background:var(--accent);padding:.02em .22em;border-radius:.16em;transform:rotate(-3deg) scale(1.05);box-shadow:0 10px 26px -10px color-mix(in srgb,var(--accent) 70%,transparent)}
+  .dwd.done{color:#fff}
+  .dbar{position:absolute;left:16px;right:16px;bottom:34px;display:flex;align-items:center;gap:12px;background:rgba(8,8,14,.55);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:9px 12px;backdrop-filter:blur(10px)}
+  .dcov{width:38px;height:38px;border-radius:9px;flex:none;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 80%,#000),#111)}
+  .dmeta{flex:1;min-width:0}.dmeta b{display:block;font-size:13px;color:#fff}.dmeta span{font-size:11px;color:#a9adbe}
+  .dplay{width:32px;height:32px;border-radius:50%;border:none;background:#fff;color:#0a0a0d;display:grid;place-items:center;cursor:pointer;flex:none}
+  .dplay:hover{transform:scale(1.07)}
+  .dtask{position:absolute;left:0;right:0;bottom:0;height:30px;background:rgba(6,6,12,.7);border-top:1px solid rgba(255,255,255,.07);display:flex;align-items:center;padding:0 12px}
+  .dtask .s{width:14px;height:14px;border-radius:4px;background:var(--panel);border:1px solid var(--line2)}
+  .dtask .t{margin-left:auto;font-size:10px;color:#c3c7db}
+  /* theme dots under device */
+  .themebar{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:22px}
+  .themebar .lbl{font-size:12px;color:var(--faint);letter-spacing:.1em;text-transform:uppercase}
+  .dot{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--line2);cursor:pointer;padding:0;transition:transform .15s}
+  .dot:hover{transform:scale(1.14)}
+  .dot[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 3px rgba(255,255,255,.14)}
+
+  /* feature sections — spacious, editorial */
+  .feature{padding:88px 0;border-top:1px solid var(--line)}
+  .feature .eyebrow{margin-bottom:16px}
+  .feature h2{font-weight:800;font-size:clamp(30px,4.6vw,52px);line-height:1.04;letter-spacing:-.03em;text-wrap:balance;max-width:18ch}
+  .feature h2 .dim{color:var(--faint)}
+  .feature p{color:var(--muted);font-size:clamp(16px,1.7vw,18px);max-width:52ch;margin-top:16px}
+  .feature.center{text-align:center}
+  .feature.center h2,.feature.center p{margin-left:auto;margin-right:auto}
+
+  /* themes strip */
+  .swatches{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:34px;perspective:900px}
+  .sw{width:150px;border:1px solid var(--line);border-radius:16px;padding:16px;background:var(--panel);text-align:left;transition:transform .25s ease, border-color .2s;transform-style:preserve-3d}
+  .sw:hover{transform:translateY(-6px) rotateX(9deg) rotateY(-4deg);border-color:var(--line2);box-shadow:0 30px 50px -30px rgba(0,0,0,.9)}
+  .sw .bar{height:64px;border-radius:10px;margin-bottom:12px}
+  .sw b{font-size:14px;font-weight:600}
+  .sw span{display:block;font-size:12px;color:var(--faint)}
+
+  /* steps */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+  @media(max-width:720px){.steps{grid-template-columns:1fr}}
+  .step{padding:26px 26px 26px 0}
+  .step:not(:last-child){border-right:1px solid var(--line)}
+  @media(max-width:720px){.step{border-right:0;border-bottom:1px solid var(--line);padding:22px 0}}
+  .step .n{font-size:13px;color:var(--accent);font-weight:700;margin-bottom:8px}
+  .step h3{font-weight:700;font-size:18px;margin-bottom:6px;letter-spacing:-.01em}
+  .step p{color:var(--muted);font-size:14.5px;max-width:34ch}
+  @media(min-width:721px){.step{padding-left:26px}.step:first-child{padding-left:0}}
+
+  /* download */
+  .download{text-align:center;padding:96px 0}
+  .download h2{font-weight:800;font-size:clamp(30px,4.4vw,52px);letter-spacing:-.03em;line-height:1.02}
+  .download p{color:var(--muted);margin-top:14px}
+  .dlpanel{margin:32px auto 0;max-width:440px;border:1px solid var(--line);border-radius:20px;padding:24px;background:var(--panel);text-align:left}
+  .dlpanel .top{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .dlpanel .win{width:40px;height:40px;border-radius:11px;background:#0a0a0f;border:1px solid var(--line2);display:grid;place-items:center;font-size:20px}
+  .dlpanel .top b{font-size:16px}.dlpanel .top span{display:block;font-size:13px;color:var(--faint)}
+  .dlpanel .specs{display:flex;justify-content:space-between;border-top:1px solid var(--line);margin-top:16px;padding-top:16px}
+  .dlpanel .specs div{font-size:12px;color:var(--faint)}
+  .dlpanel .specs b{display:block;color:var(--ink);font-size:15px;font-weight:700;margin-top:2px}
+  .dlpanel .btn{width:100%;justify-content:center;margin-top:18px}
+
+  footer{border-top:1px solid var(--line);padding:30px 0;color:var(--faint);font-size:13.5px}
+  footer .row{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center}
+
+  /* modal */
+  .modal{position:fixed;inset:0;z-index:80;display:none;place-items:center;padding:24px;background:rgba(4,4,8,.72);backdrop-filter:blur(10px)}
+  .modal.open{display:grid}
+  .modal .box{max-width:600px;width:100%;max-height:86vh;overflow:auto;background:var(--panel);border:1px solid var(--line2);border-radius:22px;padding:30px}
+  .modal h2{font-weight:800;font-size:28px;letter-spacing:-.02em}
+  .modal .sub{color:var(--muted);margin:6px 0 20px}
+  .modal h4{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin:22px 0 8px}
+  .modal p,.modal li{color:var(--muted);font-size:15px}
+  .modal ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+  .modal .x{float:right;width:36px;height:36px;border-radius:10px;border:1px solid var(--line2);background:transparent;color:var(--ink);cursor:pointer;font-size:15px}
+  .modal .x:hover{background:rgba(255,255,255,.08)}
+
+  .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(16px);opacity:0;pointer-events:none;background:var(--ink);color:#0a0a0d;font-weight:600;font-size:14px;padding:12px 18px;border-radius:999px;z-index:90;transition:.25s}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}.rig{transform:rotateX(8deg)!important}}
+</style>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav">
+  <div class="wrap row">
+    <a class="brand" href="#top"><span class="mk">L</span>Lyra</a>
+    <nav class="links" aria-label="Primary">
+      <a href="#word">Sync</a><a href="#glow">Glow</a><a href="#themes">Themes</a><a href="#download">Download</a>
+    </nav>
+    <span class="sp"></span>
+    <a class="btn primary" href="#download">Get Lyra</a>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero wrap" id="top" aria-labelledby="h1">
+    <p class="eyebrow">Live lyrics for Windows</p>
+    <h1 id="h1">The words, lit one at a time.</h1>
+    <p class="lede">Lyra lights the lyrics of whatever you're playing — synced to the exact moment each word is sung, right on your desktop.</p>
+    <div class="cta">
+      <a class="btn primary" href="#download">Download for Windows</a>
+      <button class="btn quiet" type="button" data-know>Know more</button>
+    </div>
+    <p class="meta">Free · Windows 10 &amp; 11 · Spotify &amp; YouTube Music</p>
+  </section>
+
+  <div class="wrap">
+    <div class="showcase">
+      <div class="floor" aria-hidden="true"></div>
+      <div class="rig" id="rig">
+        <div class="rigFloat">
+          <div class="monitor">
+            <div class="device" id="device" role="img" aria-label="Preview of Lyra lighting lyrics word by word on a Windows desktop.">
+              <div class="osclock"><b id="osT">9:41</b><span>Wednesday</span></div>
+              <div class="dstage"><div class="dlines" id="dlines"></div></div>
+              <div class="dbar">
+                <div class="dcov" aria-hidden="true"></div>
+                <div class="dmeta"><b>Neon Skyline</b><span>Midnight Radio</span></div>
+                <button class="dplay" id="dplay" aria-label="Play or pause the preview"><svg id="dplayIc" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+              </div>
+              <div class="dtask"><span class="s" aria-hidden="true"></span><span class="t" id="taskT">9:41</span></div>
+              <div class="dglow" aria-hidden="true"></div>
+            </div>
+            <div class="stand" aria-hidden="true"></div>
+            <div class="base" aria-hidden="true"></div>
+          </div>
+          <div class="keyboard" aria-hidden="true">
+            <div class="krow"><i class="key"></i><i class="key"></i><i class="key"></i><i class="key"></i><i class="key"></i><i class="key"></i><i class="key"></i><i class="key"></i><i class="key"></i><i class="key"></i><i class="key"></i><i class="key"></i></div>
+            <div class="krow"><i class="key"></i><i class="key"></i><i class="key"></i><i class="key accent"></i><i class="key"></i><i class="key"></i><i class="key"></i><i class="key"></i><i class="key"></i><i class="key"></i><i class="key"></i></div>
+            <div class="krow"><i class="key"></i><i class="key"></i><i class="key"></i><i class="key"></i><i class="key"></i><i class="key"></i><i class="key"></i><i class="key"></i><i class="key"></i><i class="key"></i></div>
+            <div class="krow"><i class="key"></i><i class="key"></i><i class="key wide"></i><i class="key"></i><i class="key"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="themebar" role="group" aria-label="Preview theme">
+      <span class="lbl">Theme</span>
+      <button class="dot" data-theme="pink" aria-pressed="true" aria-label="Pink" style="background:#ff2e6e"></button>
+      <button class="dot" data-theme="cyan" aria-pressed="false" aria-label="Cyan" style="background:#2fe6ff"></button>
+      <button class="dot" data-theme="mint" aria-pressed="false" aria-label="Mint" style="background:#2ff5c0"></button>
+    </div>
+  </div>
+
+  <!-- feature: word by word -->
+  <section class="feature center" id="word" aria-labelledby="wh">
+    <div class="wrap">
+      <p class="eyebrow">Word-level sync</p>
+      <h2 id="wh">One word at a time. <span class="dim">Exactly on beat.</span></h2>
+      <p>Lyra reads real time-coded lyrics, so each word lands with the singer instead of scrolling a line at a time. When a song only has line timing, it spreads the words evenly so the beam still moves with the music.</p>
+    </div>
+  </section>
+
+  <!-- feature: glow -->
+  <section class="feature center" id="glow" aria-labelledby="gh">
+    <div class="wrap">
+      <p class="eyebrow">Beat-reactive light</p>
+      <h2 id="gh">The glow moves <span class="dim">with the music.</span></h2>
+      <p>An ambient rim of light wraps the window and pulses to your system audio — never your mic. It swells with the volume and hits on every beat, then settles when the track does.</p>
+    </div>
+  </section>
+
+  <!-- feature: themes -->
+  <section class="feature center" id="themes" aria-labelledby="th">
+    <div class="wrap">
+      <p class="eyebrow">Make it yours</p>
+      <h2 id="th">Three looks. <span class="dim">One keystroke.</span></h2>
+      <p>Swap the entire mood in an instant — thick bubble type, big and clear, with a fresh entrance on every word. Try them on the preview above.</p>
+      <div class="swatches">
+        <div class="sw"><div class="bar" style="background:linear-gradient(120deg,#ff6a2a,#c2361a)"></div><b>Ember</b><span>Warm · orange</span></div>
+        <div class="sw"><div class="bar" style="background:linear-gradient(120deg,#22e6ff,#ff2bd6)"></div><b>Neon</b><span>Electric · dark</span></div>
+        <div class="sw"><div class="bar" style="background:linear-gradient(120deg,#2ff5c0,#7c5cff)"></div><b>Aurora</b><span>Cool · midnight</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- steps -->
+  <section class="feature" aria-labelledby="sh">
+    <div class="wrap">
+      <p class="eyebrow">How it works</p>
+      <h2 id="sh" style="margin-bottom:34px">Nothing to set up.</h2>
+      <div class="steps">
+        <div class="step"><div class="n">01</div><h3>Play anything</h3><p>Hit play in Spotify or YouTube Music. Lyra reads the track from Windows — no login.</p></div>
+        <div class="step"><div class="n">02</div><h3>Lyrics land</h3><p>It fetches free time-coded lyrics and lights each word over your desktop.</p></div>
+        <div class="step"><div class="n">03</div><h3>Make it yours</h3><p>Pick a theme, resize it, full-screen it. The glow follows the beat from there.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- download -->
+  <section class="download wrap" id="download" aria-labelledby="dh">
+    <p class="eyebrow" style="margin-bottom:14px">Get Lyra</p>
+    <h2 id="dh">Put the words on your screen.</h2>
+    <p>Version 1.0 for Windows — free while it's early.</p>
+    <div class="dlpanel">
+      <div class="top">
+        <div class="win" aria-hidden="true">⊞</div>
+        <div><b>Lyra for Windows</b><span>Windows 10 / 11 · 64-bit</span></div>
+      </div>
+      <p style="color:var(--muted);font-size:14px;margin:0">Lightweight system-tray app. Install it, play a song, lock in your vibe.</p>
+      <div class="specs">
+        <div>Version<b>1.0.0</b></div><div>Size<b>~90 MB</b></div><div>Price<b>Free</b></div>
+      </div>
+      <a class="btn primary" href="#" id="dlBtn">Download .exe</a>
+      <button class="btn quiet" type="button" data-know style="width:100%;justify-content:center;margin-top:10px">Know more</button>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap row">
+    <a class="brand" href="#top"><span class="mk">L</span>Lyra</a>
+    <span>Live lyrics for Windows.</span>
+    <span>© 2026 Lyra</span>
+  </div>
+</footer>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle" hidden>
+  <div class="box">
+    <button class="x" id="mClose" aria-label="Close">✕</button>
+    <h2 id="mTitle">What is Lyra?</h2>
+    <p class="sub">Live, word-by-word lyrics that live on your Windows desktop.</p>
+    <p>Lyra is a lightweight system-tray app that reads whatever you're playing and lights its lyrics over your screen — one word at a time, in sync with the singer, with an ambient glow that reacts to the actual beat. It just lives there while you work, chill or vibe.</p>
+    <h4>How the sync works</h4>
+    <ul>
+      <li>Reads the current track from Windows' media system — Spotify and YouTube Music, app or browser, no login.</li>
+      <li>Pulls free time-coded lyrics and lights words to real timing; smooths line-only timing when needed.</li>
+      <li>Listens to system audio (never your mic) to pulse the glow on every beat.</li>
+    </ul>
+    <h4>Make it yours</h4>
+    <ul>
+      <li>Themes: Ember, Neon, Aurora — one key swaps the whole look.</li>
+      <li>Thick bubble type, sized big, with a different entrance on every word.</li>
+      <li>Float it, resize it, or go full-screen. Album art shows beside the track.</li>
+    </ul>
+    <h4>Controls</h4>
+    <ul><li>Space play/pause · Shift theme · ← → skip · ↑ ↓ volume · F full screen · A glow.</li></ul>
+    <h4>Privacy</h4>
+    <ul><li>No microphone, no screen recording, no uploads. Lyrics fetched anonymously; everything else stays on your PC.</li></ul>
+    <h4>Requirements</h4>
+    <ul><li>Windows 10 or 11 (64-bit). Free, v1.0.0.</li></ul>
+    <div style="margin-top:24px"><a class="btn primary" href="#download" id="mDl">Download for Windows</a></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  "use strict";
+  const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function clk(){const d=new Date();const t=((d.getHours()%12)||12)+":"+String(d.getMinutes()).padStart(2,"0");$("#osT").textContent=t;$("#taskT").textContent=t;}
+  clk();setInterval(clk,20000);
+
+  const dev=$("#device"),rig=$("#rig");
+  if(!reduce){
+    const sc=$(".showcase");
+    sc.addEventListener("pointermove",e=>{const r=sc.getBoundingClientRect();const px=(e.clientX-r.left)/r.width-0.5,py=(e.clientY-r.top)/r.height-0.5;
+      rig.style.setProperty("--ry",(px*13).toFixed(1)+"deg");rig.style.setProperty("--rx",(9-py*7).toFixed(1)+"deg");});
+    sc.addEventListener("pointerleave",()=>{rig.style.setProperty("--ry","0deg");rig.style.setProperty("--rx","9deg");});
+  }
+
+  const THEMES={
+    pink:{a:"#ff2e6e",ai:"#fff",wall:"radial-gradient(120% 90% at 25% 0%, rgba(255,46,110,.18), transparent 55%),linear-gradient(160deg,#12070d,#0a0a10)"},
+    cyan:{a:"#2fe6ff",ai:"#04121a",wall:"radial-gradient(120% 90% at 25% 0%, rgba(47,230,255,.16), transparent 55%),radial-gradient(120% 90% at 100% 100%, rgba(255,43,214,.14), transparent 55%),linear-gradient(160deg,#08101e,#0a0a12)"},
+    mint:{a:"#2ff5c0",ai:"#04140f",wall:"radial-gradient(120% 90% at 25% 0%, rgba(47,245,192,.16), transparent 55%),radial-gradient(120% 90% at 100% 100%, rgba(124,92,255,.18), transparent 55%),linear-gradient(160deg,#08131a,#0a0a12)"}
+  };
+  function setTheme(n){const t=THEMES[n];dev.style.setProperty("--d-wall",t.wall);document.documentElement.style.setProperty("--accent",t.a);document.documentElement.style.setProperty("--accent-ink",t.ai);
+    $$(".dot").forEach(d=>d.setAttribute("aria-pressed",d.dataset.theme===n?"true":"false"));}
+  $$(".dot").forEach(d=>d.addEventListener("click",()=>setTheme(d.dataset.theme)));
+  setTheme("pink");
+
+  const LINES=[["Turn the night into a screen",2.6],["Every word a burst of light",2.6],["Sing it out and let it glow",2.6],["Lyra's got you — feel the beat",2.8]];
+  const dlines=$("#dlines");const built=[];let total=0;
+  LINES.forEach(([text,dur])=>{const div=document.createElement("div");div.className="dln";
+    const words=text.split(" ");const w=words.map(x=>x.replace(/[^\w']/g,"").length+1);const tot=w.reduce((a,b)=>a+b,0);let wt=total;const ws=[];
+    words.forEach((x,i)=>{const sp=document.createElement("span");sp.className="dwd";sp.textContent=x;div.appendChild(sp);const wd=dur*w[i]/tot;ws.push({el:sp,start:wt,end:wt+wd*0.92});wt+=wd;});
+    dlines.appendChild(div);built.push({el:div,words:ws,start:total});total+=dur+0.4;});
+  let playing=true,base=0,baseAt=performance.now(),pulse=0,lastAW="";
+  const now=()=>base+(playing?(performance.now()-baseAt)/1000:0);
+  function tick(){let t=now();if(t>total){base=0;baseAt=performance.now();t=0;}let ai=0;built.forEach((l,i)=>{if(t>=l.start-0.3)ai=i;});
+    let curAW="";
+    built.forEach((l,i)=>{const d=Math.abs(i-ai);l.el.style.opacity=Math.max(.12,1-d*0.5);l.el.style.transform=`scale(${(1-d*0.05).toFixed(3)})`;
+      l.words.forEach((x,j)=>{const on=t>=x.start&&t<x.end;x.el.classList.toggle("on",on);x.el.classList.toggle("done",t>=x.end);if(on)curAW=i+"-"+j;});});
+    if(curAW&&curAW!==lastAW){lastAW=curAW;pulse=1;}   // new word = beat pulse for the glow
+    pulse*=0.9;
+    dev.style.setProperty("--amb",(0.32+0.08*Math.sin(performance.now()/900)+pulse*0.6).toFixed(3));
+    requestAnimationFrame(tick);}
+  requestAnimationFrame(tick);
+  $("#dplay").addEventListener("click",()=>{playing=!playing;if(playing)baseAt=performance.now();else base=now();
+    $("#dplayIc").innerHTML=playing?'<path d="M8 5v14l11-7z"/>':'<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>';});
+
+  const modal=$("#modal");let lastFocus=null;
+  function openM(){lastFocus=document.activeElement;modal.hidden=false;modal.classList.add("open");$("#mClose").focus();}
+  function closeM(){modal.classList.remove("open");modal.hidden=true;if(lastFocus)lastFocus.focus();}
+  $$("[data-know]").forEach(b=>b.addEventListener("click",openM));
+  $("#mClose").addEventListener("click",closeM);
+  modal.addEventListener("click",e=>{if(e.target===modal)closeM();});
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&modal.classList.contains("open"))closeM();});
+
+  // ▼▼▼ paste your hosted download URL here (GitHub Release / your host), e.g. ".../Lyra-Windows-v1.0.0.zip"
+  const DOWNLOAD_URL="";
+  // ▲▲▲ leave empty to show the "coming soon" toast
+  const toast=$("#toast");let tt;
+  function ping(m){toast.textContent=m;toast.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>toast.classList.remove("show"),2600);}
+  ["dlBtn","mDl"].forEach(id=>{const el=document.getElementById(id);if(!el)return;
+    if(DOWNLOAD_URL){el.setAttribute("href",DOWNLOAD_URL);el.setAttribute("download","");}
+    el.addEventListener("click",e=>{if(!DOWNLOAD_URL){e.preventDefault();ping("Windows build v1.0 is dropping soon — you're early.");}});});
+})();
+</script>
