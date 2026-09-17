@@ -387,7 +387,7 @@
   document.addEventListener("keydown",e=>{if(e.key==="Escape"&&modal.classList.contains("open"))closeM();});
 
   // ▼▼▼ paste your hosted download URL here (GitHub Release / your host), e.g. ".../Lyra-Windows-v1.0.0.zip"
-  const DOWNLOAD_URL="";
+  const DOWNLOAD_URL="https://github.com/yashguptaboss4-cell/Yash/releases/download/v1.0.0/Lyra-Windows-v1.0.0.zip";
   // ▲▲▲ leave empty to show the "coming soon" toast
   const toast=$("#toast");let tt;
   function ping(m){toast.textContent=m;toast.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>toast.classList.remove("show"),2600);}
